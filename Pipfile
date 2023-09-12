@@ -11,6 +11,7 @@ scipy = "*"
 tenacity = "*"
 tiktoken = "*"
 termcolor = "*"
+rspace-client = "*"
 
 [dev-packages]
 
