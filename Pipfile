@@ -12,6 +12,7 @@ tenacity = "*"
 tiktoken = "*"
 termcolor = "*"
 rspace-client = "*"
+streamlit = "*"
 
 [dev-packages]
 

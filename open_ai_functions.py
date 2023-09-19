@@ -6,9 +6,10 @@ from termcolor import colored
 
 GPT_MODEL = "gpt-4"
 
+
 def pretty_print_conversation(messages):
     """
-      Prints color-coded messages according to their tole
+    Prints color-coded messages according to their tole
     """
     role_to_color = {
         "system": "red",
@@ -16,30 +17,75 @@ def pretty_print_conversation(messages):
         "assistant": "blue",
         "function": "magenta",
     }
-    
+
     for message in messages:
         if message["role"] == "system":
-            print(colored(f"system: {message['content']}\n", role_to_color[message["role"]]))
+            print(
+                colored(
+                    f"system: {message['content']}\n", role_to_color[message["role"]]
+                )
+            )
         elif message["role"] == "user":
-            print(colored(f"user: {message['content']}\n", role_to_color[message["role"]]))
+            print(
+                colored(f"user: {message['content']}\n", role_to_color[message["role"]])
+            )
         elif message["role"] == "assistant" and message.get("function_call"):
-            print(colored(f"assistant: {message['function_call']}\n", role_to_color[message["role"]]))
+            print(
+                colored(
+                    f"assistant: {message['function_call']}\n",
+                    role_to_color[message["role"]],
+                )
+            )
         elif message["role"] == "assistant" and not message.get("function_call"):
-            print(colored(f"assistant: {message['content']}\n", role_to_color[message["role"]]))
+            print(
+                colored(
+                    f"assistant: {message['content']}\n", role_to_color[message["role"]]
+                )
+            )
         elif message["role"] == "function":
-            print(colored(f"function ({message['name']}): {message['content']}\n", role_to_color[message["role"]]))
+            print(
+                colored(
+                    f"function ({message['name']}): {message['content']}\n",
+                    role_to_color[message["role"]],
+                )
+            )
+
+
+def pretty_print_conversation2(messages):
+    """
+    Prints color-coded messages according to their tole
+    """
+    rc = []
+
+    for message in messages:
+        if message["role"] == "system":
+            rc.append(f"system: {message['content']}\n")
+        elif message["role"] == "user":
+            rc.append(f"user: {message['content']}\n")
+        elif message["role"] == "assistant" and message.get("function_call"):
+            rc.append(f"assistant: {message['function_call']}\n")
+        elif message["role"] == "assistant" and not message.get("function_call"):
+            rc.append(f"assistant: {message['content']}\n")
+        elif message["role"] == "function":
+            rc.append(f"function ({message['name']}): {message['content']}\n")
+    return rc
+
 
 @retry(wait=wait_random_exponential(multiplier=1, max=40), stop=stop_after_attempt(3))
-def chat_completion_request(messages, functions=None, function_call=None, model=GPT_MODEL):
+def chat_completion_request(
+    messages, functions=None, function_call=None, model=GPT_MODEL
+):
     headers = {
         "Content-Type": "application/json",
         "Authorization": "Bearer " + openai.api_key,
     }
     json_data = {"model": model, "messages": messages}
+
     if functions is not None:
         json_data.update({"functions": functions})
     if function_call is not None:
         json_data.update({"function_call": function_call})
+    print(json_data)
     try:
         response = requests.post(
             "https://api.openai.com/v1/chat/completions",
