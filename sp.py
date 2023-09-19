@@ -67,17 +67,37 @@ def do_conversation(messages, functions):
 
 # Main function for Streamlit app
 def main():
-    ##unsafe_allow_html(bool)
-
     # Create text area with label 'Input data'
-    user_input = st.text_area("Input data", "")
+    user_input = st.text_area("Enter a search query  for RSpace in your own words", "")
+    with st.expander("Examples"):
+        st.write(
+            """
+            - tagged with polyclonal
+            - tagged with polyclonal and ECL but not PCR newest first
+            - tagged with polyclonal and ECL but not PCR sort alpha 
+            - with 'dna polymerase' in the text
+        """
+        )
 
-    # Create a button with label 'submit'
-    if st.button("Search for content in RSpace in your own words"):
-        result = process(user_input)  # Process the input using the process method
-        st.text_area(
-            "Output", key="output_area", height=800, value=result, disabled=True
-        )  # Displa
+    if st.button("Search"):
+        with st.spinner("searching..."):
+            (conversation, results) = process(
+                user_input
+            )  # Process the input using the process method
+
+            conversation = pretty_print_conversation2(conversation)
+            st.subheader("Conversation history")
+            c = '<div style ="border: 2px solid blue; padding:1em;">'
+            for m in conversation:
+                c += f'<p style="color:{m["c"]}">{m["m"]}</p>'
+            c += "</div>"
+            st.markdown(c, unsafe_allow_html=True)
+
+            st.markdown("</div>", unsafe_allow_html=True)
+            # conversation = "\n".join(conversation)
+            jsonout = json.dumps(results, indent=2)
+            st.subheader("Search results")
+            st.text_area("", key="output_area", height=800, value=jsonout)
 
     # Create a button with label 'Clear Input'
     if st.button("Clear Input"):
@@ -95,14 +115,7 @@ def process(data):
         {"role": "system", "content": "Extract user input into structured data"}
     ]
     messages.append({"role": "user", "content": data})
-    (conversation, results) = do_conversation(messages, functions)
-
-    print("-----------------------------------")
-
-    conversation = pretty_print_conversation2(conversation)
-    conversation = "\n".join(conversation)
-    conversation += json.dumps(results, indent=2)
-    return conversation
+    return do_conversation(messages, functions)
 
 
 if __name__ == "__main__":

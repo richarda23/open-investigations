@@ -6,17 +6,18 @@ from termcolor import colored
 
 GPT_MODEL = "gpt-4"
 
+role_to_color = {
+    "system": "red",
+    "user": "green",
+    "assistant": "blue",
+    "function": "magenta",
+}
+
 
 def pretty_print_conversation(messages):
     """
     Prints color-coded messages according to their tole
     """
-    role_to_color = {
-        "system": "red",
-        "user": "green",
-        "assistant": "blue",
-        "function": "magenta",
-    }
 
     for message in messages:
         if message["role"] == "system":
@@ -56,18 +57,44 @@ def pretty_print_conversation2(messages):
     Prints color-coded messages according to their tole
     """
     rc = []
+    ## add color
 
     for message in messages:
         if message["role"] == "system":
-            rc.append(f"system: {message['content']}\n")
+            rc.append(
+                {
+                    "m": f"system: {message['content']}",
+                    "c": role_to_color[message["role"]],
+                }
+            )
         elif message["role"] == "user":
-            rc.append(f"user: {message['content']}\n")
+            rc.append(
+                {
+                    "m": f"user: {message['content']}",
+                    "c": role_to_color[message["role"]],
+                }
+            )
         elif message["role"] == "assistant" and message.get("function_call"):
-            rc.append(f"assistant: {message['function_call']}\n")
+            rc.append(
+                {
+                    "m": f"assistant: {message['function_call']}",
+                    "c": role_to_color[message["role"]],
+                }
+            )
         elif message["role"] == "assistant" and not message.get("function_call"):
-            rc.append(f"assistant: {message['content']}\n")
+            rc.append(
+                {
+                    "m": f"assistant: {message['content']}",
+                    "c": role_to_color[message["role"]],
+                }
+            )
         elif message["role"] == "function":
-            rc.append(f"function ({message['name']}): {message['content']}\n")
+            rc.append(
+                {
+                    "m": f"function ({message['name']}): {message['content']}",
+                    "c": role_to_color[message["role"]],
+                }
+            )
     return rc
 
 
@@ -85,7 +112,6 @@ def chat_completion_request(
         json_data.update({"functions": functions})
     if function_call is not None:
         json_data.update({"function_call": function_call})
-    print(json_data)
     try:
         response = requests.post(
             "https://api.openai.com/v1/chat/completions",
