@@ -100,11 +100,11 @@ def pretty_print_conversation2(messages):
 
 @retry(wait=wait_random_exponential(multiplier=1, max=40), stop=stop_after_attempt(3))
 def chat_completion_request(
-    messages, functions=None, function_call=None, model=GPT_MODEL
+    messages, functions=None, function_call=None, model=GPT_MODEL, key=openai.api_key
 ):
     headers = {
         "Content-Type": "application/json",
-        "Authorization": "Bearer " + openai.api_key,
+        "Authorization": "Bearer " + key,
     }
     json_data = {"model": model, "messages": messages}
 

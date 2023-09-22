@@ -7,16 +7,19 @@ import os
 from rspace_client.eln import eln
 from tenacity import retry, wait_random_exponential, stop_after_attempt
 from termcolor import colored
-from open_ai_functions import pretty_print_conversation2, chat_completion_request
+from jupyter_notebooks.open_ai_functions import (
+    pretty_print_conversation2,
+    chat_completion_request,
+)
 
 GPT_MODEL = "gpt-4"
-eln_cli = eln.ELNClient(os.getenv("RSPACE_URL"), os.getenv("RSPACE_API_KEY"))
-print(eln_cli.get_status())
 
 
 def search_rspace_eln(luceneQuery, sort_order="lastModified desc"):
     q = "l: " + luceneQuery
-    docs = eln_cli.get_documents(query=q, order_by=sort_order)["documents"]
+    docs = st.session_state.eln_cli.get_documents(query=q, order_by=sort_order)[
+        "documents"
+    ]
     wanted_keys = ["globalId", "name", "tags", "created"]  # The keys we want
     summarised = list(
         map(lambda d: dict((k, d[k]) for k in wanted_keys if k in d), docs)
@@ -53,7 +56,12 @@ functions = [
 
 
 def do_conversation(messages, functions):
-    resp = chat_completion_request(messages, functions, {"name": "lucene"})
+    resp = chat_completion_request(
+        messages,
+        functions,
+        function_call={"name": "lucene"},
+        key=st.secrets.OPENAI_API_KEY,
+    )
     active_messages = messages.copy()
     response_message = resp.json()["choices"][0]["message"]
     active_messages.append(response_message)
@@ -65,15 +73,53 @@ def do_conversation(messages, functions):
     return (active_messages, rspace_search_result)
 
 
+def card(item):
+    return f"""
+    <div style="border: 1px solid #ccc; border-radius: 5px; padding: 20px; width: 300px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); position: relative;">
+    <div style="font-size: 20px; font-weight: bold;">Card Title</div>
+    <div style="position: absolute; bottom: 20px; width: 100%; display: flex; justify-content: space-between;">
+        <span style="font-size: 14px;">20/09/2023</span>
+        <span style="font-size: 14px;">Additional Info</span>
+    </div>
+</div>
+"""
+
+
+def form_callback():
+    st.session_state.eln_cli = eln.ELNClient(
+        st.session_state.rspace_url, st.session_state.rspace_apikey
+    )
+    st.sidebar.write(st.session_state.eln_cli.get_status())
+
+
 # Main function for Streamlit app
 def main():
+    st.set_page_config(page_title="RSpace query with GPT")
+
     # Create text area with label 'Input data'
-    user_input = st.text_area("Enter a search query  for RSpace in your own words", "")
+    with st.sidebar:
+        with st.form(key="my_form"):
+            apikey = st.text_input(
+                "Your RSpace API key", key="rspace_apikey", type="password"
+            )
+            url = st.text_input(
+                "Your RSpace URL",
+                key="rspace_url",
+                placeholder="https://community.researchspace.com",
+            )
+            submit_button = st.form_submit_button(
+                label="Submit", on_click=form_callback
+            )
+    user_input = st.text_area(
+        "Set up your RSpace URL and key, then enter a search query  for RSpace in your own words",
+        "",
+    )
+
     with st.expander("Examples"):
         st.write(
             """
             - tagged with polyclonal
-            - tagged with polyclonal and ECL but not PCR newest first
+            - tagged with polyclonal and PCR but not ECL newest first
             - tagged with polyclonal and ECL but not PCR sort alpha 
             - with 'dna polymerase' in the text
         """
