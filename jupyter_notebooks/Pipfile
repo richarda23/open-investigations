@@ -13,6 +13,11 @@ tiktoken = "*"
 termcolor = "*"
 rspace-client = "*"
 streamlit = "*"
+langchain = "*"
+python-dotenv = "*"
+chroma = "*"
+chromadb = "*"
+lark = "*"
 
 [dev-packages]
 
