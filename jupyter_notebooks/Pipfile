@@ -13,11 +13,13 @@ tiktoken = "*"
 termcolor = "*"
 rspace-client = "*"
 streamlit = "*"
-langchain = "*"
 python-dotenv = "*"
 chroma = "*"
 chromadb = "*"
 lark = "*"
+langchain = {extras = ["docarray"], version = "*"}
+docarray = "*"
+pydantic = "==1.10.9"
 
 [dev-packages]
 
