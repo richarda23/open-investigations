@@ -4,7 +4,7 @@ import json
 import openai
 import requests
 import os
-    from rspace_client.eln import eln
+from rspace_client.eln import eln
 from tenacity import retry, wait_random_exponential, stop_after_attempt
 from termcolor import colored
 from jupyter_notebooks.open_ai_functions import (

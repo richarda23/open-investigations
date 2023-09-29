@@ -22,7 +22,7 @@ class RSpaceLoader(BaseLoader, BaseModel):
                 content += f['content']
                 content += '\n'
 
-            yield Document(metadata={'source': f"rspace:{doc['globalId']}"}, page_content=content)
+            yield Document(metadata={'source': f"rspace: {doc['name']}-{doc['globalId']}"}, page_content=content)
 
     api_key: str
     url: str

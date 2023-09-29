@@ -3,3 +3,7 @@
 .streamlit/secrets.toml
 venv/*
 jupyter_notebooks/chroma/
+ jupyter_notebooks/__pycache__/
+ .idea/misc.xml
+.idea/misc.xml
+jupyter_notebooks/__pycache__/
