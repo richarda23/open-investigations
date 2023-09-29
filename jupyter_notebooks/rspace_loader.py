@@ -3,7 +3,7 @@ import os
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
 from langchain.pydantic_v1 import BaseModel, root_validator
-from typing import Any, Dict, List, Optional, Iterator
+from typing import Any, Dict, List, Optional, Iterator, Union
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -26,7 +26,7 @@ class RSpaceLoader(BaseLoader, BaseModel):
 
     api_key: str
     url: str
-    folder_id: str | int
+    folder_id: Union[int, str]
 
     def _create_rspace_client(self) -> Any:
         """Create a RSpace client."""
