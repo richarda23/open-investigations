@@ -1,18 +1,12 @@
 # Import necessary libraries
 import collections
+import re
 
-import regex
 import streamlit as st
-import json
-import openai
-import requests
-import os
-
 from langchain.schema import Document
 from rspace_client.eln import eln
 from jupyter_notebooks.rspace_loader import RSpaceLoader;
 from langchain.chat_models import ChatOpenAI
-from langchain.chains.llm import LLMChain
 from langchain.prompts import PromptTemplate
 from langchain.chains.summarize import load_summarize_chain
 import textwrap
@@ -98,7 +92,7 @@ def main():
         )
         if st.button("Import"):
             with st.spinner(f"importing documents from  {folder_to_import}"):
-                if regex.match(r'^[A-Z]{2}\d+', folder_to_import):
+                if re.match(r'^[A-Z]{2}\d+', folder_to_import):
                     folder_to_import = folder_to_import[2:]
                 loader = RSpaceLoader(api_key=st.session_state.rspace_apikey, url=st.session_state.rspace_url,
                                       folder_id=folder_to_import)
