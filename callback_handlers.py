@@ -50,8 +50,8 @@ class MyStreamLitHandler(BaseCallbackHandler):
             **kwargs: Any,
     ) -> Any:
         abbreviated = text
-        if len(text) > 50:
-            abbreviated = text[0:50]
+        if len(text) > 200:
+            abbreviated = text[0:200]
         self.container.write(f"Received text - {abbreviated}.....")
 
     def on_llm_new_token(self, token: str, **kwargs: Any) -> None:
@@ -89,16 +89,6 @@ class MyStreamLitHandler(BaseCallbackHandler):
 
     def on_tool_error(self, error: BaseException, **kwargs: Any) -> None:
         """Do nothing."""
-        pass
-
-    def on_text(
-            self,
-            text: str,
-            color: Optional[str] = None,
-            end: str = "",
-            **kwargs: Any,
-    ) -> None:
-        """Run when agent ends."""
         pass
 
     def on_agent_finish(

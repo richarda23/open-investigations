@@ -32,14 +32,15 @@ def show_help():
     st.write("No content is created or altered  in your RSpace account - data is only read.")
 
 
-def run_summary(docs: List[Document], handler, model_choice,summary_method) -> str:
+def run_summary(docs: List[Document], handler, model_choice, summary_method) -> str:
     if "instruct" in model_choice:
         chat_llm = OpenAI(temperature=0.0, model=model_choice)
     else:
         chat_llm = ChatOpenAI(temperature=0.0, model=model_choice)
 
     prompt = """
-     Write a concise summary of the input text. 
+     Write a concise summary of the input text.
+     The summary must be at most half the length of the input text, but can be up to 250 words. 
     
     The text:
     
@@ -51,10 +52,11 @@ def run_summary(docs: List[Document], handler, model_choice,summary_method) -> s
         """
     prompt_t = PromptTemplate(input_variables=['text'], template=prompt)
 
-    chain = load_summarize_chain(llm=chat_llm, verbose=True, chain_type=summary_method)
+    chain = load_summarize_chain(llm=chat_llm, verbose=True, chain_type=summary_method, combine_prompt=prompt_t)
     splitter = RecursiveCharacterTextSplitter(chunk_size=3500, chunk_overlap=200)
     split_docs = splitter.split_documents(docs)
 
+    # collects usage and billing info
     openai_cb = OpenAICallbackHandler()
 
     output_summary = chain.run(split_docs, callbacks=[handler, openai_cb])
@@ -107,10 +109,8 @@ def main():
             st.session_state.loaded_docs = []
         if st.button("Import"):
             with st.spinner(f"importing documents from  {folder_to_import}"):
-                if re.match(r'^[A-Z]{2}\d+', folder_to_import):
-                    folder_to_import = folder_to_import[2:]
                 loader = RSpaceLoader(api_key=st.session_state.rspace_apikey, url=st.session_state.rspace_url,
-                                      folder_id=folder_to_import)
+                                      global_id=folder_to_import)
                 for d in loader.lazy_load():
                     st.write(f"read doc {d.metadata['source']}")
                     imported_rspace_docs.append(d)
@@ -135,7 +135,7 @@ def main():
                 with st.spinner("Summarizing..."):
                     log_ct.empty()
                     writer = MyStreamLitHandler(log_ct)
-                    result = run_summary(st.session_state.loaded_docs, writer, model_choice,summary_method)
+                    result = run_summary(st.session_state.loaded_docs, writer, model_choice, summary_method)
                     st.code(result, language=None, line_numbers=False)
 
 
