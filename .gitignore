@@ -7,3 +7,5 @@ jupyter_notebooks/chroma/
  .idea/misc.xml
 .idea/misc.xml
 jupyter_notebooks/__pycache__/
+rob_data/
+scratch.html

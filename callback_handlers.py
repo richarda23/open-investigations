@@ -21,7 +21,7 @@ class MyStreamLitHandler(BaseCallbackHandler):
     ) -> None:
         class_name = serialized.get("name", serialized.get("id", ["<unknown>"])[-1])
         docs = inputs.get('input_documents', [])
-        names =','.join([ d.metadata['source'] for d in docs])
+        names = ','.join([d.metadata['source'] for d in docs])
         self.container.write(f"\n\n:sunglasses: Entering new chain... {class_name} , analysing {names} :sunglasses:")
 
     def on_chain_end(self, outputs: Dict[str, Any], **kwargs: Any) -> None:
@@ -39,8 +39,20 @@ class MyStreamLitHandler(BaseCallbackHandler):
             self.container.write(p)
 
     def on_llm_end(self, response: LLMResult, **kwargs: Any) -> None:
-        """Do nothing."""
-        pass
+        self.container.write(f"LLM  ending..")
+
+    def on_text(
+            self,
+            text: str,
+            *,
+            run_id: UUID,
+            parent_run_id: Optional[UUID] = None,
+            **kwargs: Any,
+    ) -> Any:
+        abbreviated = text
+        if len(text) > 50:
+            abbreviated = text[0:50]
+        self.container.write(f"Received text - {abbreviated}.....")
 
     def on_llm_new_token(self, token: str, **kwargs: Any) -> None:
         """Do nothing."""

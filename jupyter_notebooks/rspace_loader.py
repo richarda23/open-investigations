@@ -5,12 +5,13 @@ from langchain.document_loaders.base import BaseLoader
 from langchain.pydantic_v1 import BaseModel, root_validator
 from typing import Any, Dict, List, Optional, Iterator, Union
 from dotenv import load_dotenv
+
 load_dotenv()
 
 
 class RSpaceLoader(BaseLoader, BaseModel):
     def lazy_load(self) -> Iterator[Document]:
-        cli = self._create_rspace_client()
+        cli, field_content = self._create_rspace_client()
         docs_in_folder = cli.list_folder_tree(folder_id=self.folder_id, typesToInclude=['document'])
         doc_ids = [d['id'] for d in docs_in_folder['records']]
         for doc_id in doc_ids:
@@ -18,8 +19,9 @@ class RSpaceLoader(BaseLoader, BaseModel):
             doc = cli.get_document(doc_id)
             content += f"<h2>{doc['name']}<h2/>"
             for f in doc['fields']:
-                content += f"<h3>{f['name']}"
-                content += f['content']
+                content += f"{f['name']}\n"
+                fc = field_content(f['content'])
+                content += fc.get_text()
                 content += '\n'
 
             yield Document(metadata={'source': f"rspace: {doc['name']}-{doc['globalId']}"}, page_content=content)
@@ -31,7 +33,7 @@ class RSpaceLoader(BaseLoader, BaseModel):
     def _create_rspace_client(self) -> Any:
         """Create a RSpace client."""
         try:
-            from rspace_client.eln import eln
+            from rspace_client.eln import eln, field_content
 
         except ImportError:
             raise ImportError("You must run " "`pip install rspace_client")
@@ -39,12 +41,13 @@ class RSpaceLoader(BaseLoader, BaseModel):
         try:
             eln = eln.ELNClient(self.url, self.api_key)
             eln.get_status()
+            field_content
 
         except Exception:
             raise Exception(
                 f"Unable to initialise client - is url {self.url} or key of length {len(self.api_key)} correct?")
 
-        return eln
+        return eln, field_content.FieldContent
 
     def load(self) -> List[Document]:
         return list(self.lazy_load())
