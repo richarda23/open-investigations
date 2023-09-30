@@ -20,13 +20,12 @@ from langchain.callbacks import OpenAICallbackHandler
 def show_help():
     st.write('## Instructions')
     st.write("First of all set up your RSpace key and URL. These will persist as long as you don't refresh the page.")
-    st.write("Now enter a  global ID - this can be a folder (FLXXXX) ,  notebook (NBXXXX), or a PDF document in the "
-             "gallery (GLxxxxx). "
+    st.write("Now enter a  global ID - this can be a folder (FLXXXX), notebook (NBXXXX), document (SDXXXX) "
+             "or a PDF document in the gallery (GLXXXXX). "
              "A maximum of  20 documents will be uploaded from a folder or notebook. This is not recursive - only top-"
              "level documents are uploaded.")
     st.write("Once the docs are loaded, choose a model and a summary strategy. The default settings are likely to "
-             "produce "
-             "the highest quality output.")
+             "produce the highest quality output.")
     st.write("Once the docs are loaded, they will be sent to the LLM (OpenAI gpt3.5) for summarising. You "
              "can follow progress in the Logs tab.")
     st.write("In general, one new 'chain' is started per document. ")
