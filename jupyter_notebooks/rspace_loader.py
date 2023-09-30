@@ -7,25 +7,32 @@ from typing import Any, Dict, List, Optional, Iterator, Union
 from dotenv import load_dotenv
 from langchain.document_loaders import PyPDFLoader
 
-
 load_dotenv()
 
 
 class RSpaceLoader(BaseLoader, BaseModel):
+
+    def _get_doc(self, cli, field_content, d_id):
+        content = ""
+        doc = cli.get_document(d_id)
+        content += f"<h2>{doc['name']}<h2/>"
+        for f in doc['fields']:
+            content += f"{f['name']}\n"
+            fc = field_content(f['content'])
+            content += fc.get_text()
+            content += '\n'
+        return Document(metadata={'source': f"rspace: {doc['name']}-{doc['globalId']}"}, page_content=content)
+
+    def _load_structured_doc(self) -> Iterator[Document]:
+        cli, field_content = self._create_rspace_client()
+        yield self._get_doc(cli, field_content, self.global_id)
+
     def _load_folder_tree(self) -> Iterator[Document]:
         cli, field_content = self._create_rspace_client()
         docs_in_folder = cli.list_folder_tree(folder_id=self.global_id[2:], typesToInclude=['document'])
         doc_ids = [d['id'] for d in docs_in_folder['records']]
         for doc_id in doc_ids:
-            content = ""
-            doc = cli.get_document(doc_id)
-            content += f"<h2>{doc['name']}<h2/>"
-            for f in doc['fields']:
-                content += f"{f['name']}\n"
-                fc = field_content(f['content'])
-                content += fc.get_text()
-                content += '\n'
-        yield Document(metadata={'source': f"rspace: {doc['name']}-{doc['globalId']}"}, page_content=content)
+            yield self._get_doc(cli, field_content, doc_id)
 
     def _load_pdf(self) -> Iterator[Document]:
         cli, field_content = self._create_rspace_client()
@@ -36,16 +43,20 @@ class RSpaceLoader(BaseLoader, BaseModel):
             outfile = f"{self.global_id}.pdf"
             cli.download_file(self.global_id, outfile)
             pdf_loader = PyPDFLoader(outfile)
-            pdf_docs = pdf_loader.load()
-            for pdf in pdf_docs:
+            for pdf in pdf_loader.lazy_load():
                 pdf.metadata['rspace_src'] = self.global_id
                 yield pdf
 
     def lazy_load(self) -> Iterator[Document]:
         if 'GL' in self.global_id:
-            return self._load_pdf()
+            for d in self._load_pdf():
+                yield d
+        elif 'SD' in self.global_id:
+            for d in self._load_structured_doc():
+                yield d
         else:
-            return self._load_folder_tree()
+            for d in self._load_folder_tree():
+                yield d
 
     api_key: str
     url: str
@@ -77,5 +88,4 @@ if __name__ == '__main__':
     loader = RSpaceLoader(url=os.getenv("RSPACE_URL"), api_key=os.getenv("RSPACE_API_KEY"), global_id="GL1932384")
     lc_docs = loader.lazy_load()
     for lc_doc in lc_docs:
-        print(lc_doc.page_content)
         print(lc_doc.metadata)

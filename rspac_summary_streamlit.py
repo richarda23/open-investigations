@@ -20,7 +20,9 @@ from langchain.callbacks import OpenAICallbackHandler
 def show_help():
     st.write('## Instructions')
     st.write("First of all set up your RSpace key and URL. These will persist as long as you don't refresh the page.")
-    st.write("Now enter a folder or notebook ID. Up to 20 documents will be uploaded. This is not recursive - only top-"
+    st.write("Now enter a  global ID - this can be a folder (FLXXXX) ,  notebook (NBXXXX), or a PDF document in the "
+             "gallery (GLxxxxx). "
+             "A maximum of  20 documents will be uploaded from a folder or notebook. This is not recursive - only top-"
              "level documents are uploaded.")
     st.write("Once the docs are loaded, choose a model and a summary strategy. The default settings are likely to "
              "produce "
@@ -40,7 +42,9 @@ def run_summary(docs: List[Document], handler, model_choice, summary_method) -> 
 
     prompt = """
      Write a concise summary of the input text.
-     The summary must be at most half the length of the input text, but can be up to 250 words. 
+     The summary must be at most half the length of the input text, but can be up to 250 words.
+     
+     Write the concise  summary of the input text and then write a maximum 10 keywords at the end on a newline.
     
     The text:
     
@@ -101,22 +105,25 @@ def main():
         show_help()
 
     with importer_tab:
-        folder_to_import = st.text_input(
-            "Set up your RSpace URL and key, then enter a folder or notebook ID, eg. FL12344, NB182183",
+        item_to_import = st.text_input(
+            "Set up your RSpace URL and key, then enter a folder, document or  notebook globalID. You can also"
+            " import a PDF from the Gallery using its global ID (e.g GL12345)",
             ""
         )
-        if st.button("Clear existing data"):
-            st.session_state.loaded_docs = []
+
         if st.button("Import"):
-            with st.spinner(f"importing documents from  {folder_to_import}"):
+            with st.spinner(f"importing documents from  {item_to_import.strip()}"):
                 loader = RSpaceLoader(api_key=st.session_state.rspace_apikey, url=st.session_state.rspace_url,
-                                      global_id=folder_to_import)
+                                      global_id=item_to_import.strip())
                 for d in loader.lazy_load():
                     st.write(f"read doc {d.metadata['source']}")
                     imported_rspace_docs.append(d)
                 st.write(f"Finished importing {len(imported_rspace_docs)} docs")
                 st.session_state.loaded_docs = imported_rspace_docs
+
         if len(st.session_state.loaded_docs) > 0:
+            if st.button("Clear existing data"):
+                st.session_state.loaded_docs = []
             model_choice = st.radio(label="Choose a language model", options=["gpt-3.5-turbo",
                                                                               "gpt-3.5-turbo-instruct"],
                                     help="'gpt-3.5-turbo-instruct' variant is faster, but tends to produce text that "
