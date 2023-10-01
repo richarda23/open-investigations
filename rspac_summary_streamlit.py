@@ -35,20 +35,25 @@ def show_help():
 
 def run_summary(docs: List[Document], handler, model_choice, summary_method) -> str:
     if "instruct" in model_choice:
-        chat_llm = OpenAI(temperature=0.0, model=model_choice)
+        chat_llm = OpenAI(temperature=0.0,  batch_size=20)
     else:
-        chat_llm = ChatOpenAI(temperature=0.0, model=model_choice)
+        chat_llm = ChatOpenAI(temperature=0.0, model_name=model_choice)
 
     prompt = """
-     Write a concise summary of the input text.
-     The summary must be at most half the length of the input text, but can be up to 250 words.
+     Write a concise  summary of the input text. Convey as wide a  range of information as possible.
+     The summary must reduce the word count to less than 50% of the wordcount of the text, and must be less than 250 words.
+     
+     Think! Count the number of words in the input text
      
      Write the concise  summary of the input text and then write a maximum 10 keywords at the end on a newline.
-    
-    The text:
+     
+     Think! Is the summary less than 50% of the wordcount of the original text, and less than 250 words?
+     
+    START OF INPUT
     
     {text}
     
+    END OF INPUT
     Your summary:
     
     Keywords:
