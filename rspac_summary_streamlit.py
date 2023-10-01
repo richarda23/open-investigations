@@ -59,8 +59,12 @@ def run_summary(docs: List[Document], log_tab_writer: MyStreamLitHandler, model_
     Keywords:
         """
     prompt_t = PromptTemplate(input_variables=['text'], template=prompt)
+    chain = None
+    if summary_method == "refine":
+        chain = load_summarize_chain(llm=chat_llm, verbose=True, chain_type=summary_method)
+    else:
+        chain = load_summarize_chain(llm=chat_llm, verbose=True, chain_type=summary_method, combine_prompt=prompt_t)
 
-    chain = load_summarize_chain(llm=chat_llm, verbose=True, chain_type=summary_method, combine_prompt=prompt_t)
     splitter = RecursiveCharacterTextSplitter(chunk_size=3500, chunk_overlap=200)
     split_docs = splitter.split_documents(docs)
 
