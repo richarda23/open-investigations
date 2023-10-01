@@ -139,7 +139,7 @@ def main():
                                                                                "refine"],
                                       help="""       
                                            - map_reduce summarizes all documents, then summarizes the summaries 
-                                            until a single summary remains. It is faster as all the documents can be 
+                                            until a single summary remains. It is faster as many documents can be 
                                             processed in parallel.
                                            - refine progressively edits an initial summary, as more documents are processed.
                                            """)
