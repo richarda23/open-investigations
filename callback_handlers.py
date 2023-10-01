@@ -40,7 +40,7 @@ class MyStreamLitHandler(BaseCallbackHandler):
         self.container.write(f"LLM  starting..")
         for p in prompts:
             abbrev = p
-            if len(abbrev > 500):
+            if len(abbrev) > 500:
                 abbrev = f"{p[:500]}..."
             self.container.write(abbrev)
 
