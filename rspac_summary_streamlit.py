@@ -110,9 +110,8 @@ def main():
 
     with importer_tab:
         item_to_import = st.text_input(
-            "Set up your RSpace URL and key, then enter a folder, document or  notebook globalID. You can also"
-            " import a PDF from the Gallery using its global ID (e.g GL12345)",
-            ""
+            "First, enter your RSpace URL and key in the sidebar. Then enter a folder, document or  notebook "
+            "globalID. You can also  import a PDF from the Gallery using its global ID (e.g GL12345)",
         )
 
         if st.button("Import"):
@@ -124,6 +123,9 @@ def main():
                     imported_rspace_docs.append(d)
                 st.write(f"Finished importing {len(imported_rspace_docs)} docs")
                 st.session_state.loaded_docs = imported_rspace_docs
+                if len(imported_rspace_docs) == 0:
+                    st.write("No documents were retrieved. If you were importing a folder, maybe it's empty. If you "
+                             "were importing a Gallery file, it has to be a PDF file with a '.pdf' file extension.")
 
         if len(st.session_state.loaded_docs) > 0:
             if st.button("Clear existing data"):
@@ -148,6 +150,7 @@ def main():
                     writer = MyStreamLitHandler(log_ct)
                     result = run_summary(st.session_state.loaded_docs, writer, model_choice, summary_method)
                     st.code(result, language=None, line_numbers=False)
+
 
 
 if __name__ == "__main__":
