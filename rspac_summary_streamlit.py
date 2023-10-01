@@ -33,7 +33,7 @@ def show_help():
     st.write("No content is created or altered  in your RSpace account - data is only read.")
 
 
-def run_summary(docs: List[Document], handler, model_choice, summary_method) -> str:
+def run_summary(docs: List[Document], log_tab_writer: MyStreamLitHandler, model_choice: str, summary_method: str) -> str:
     if "instruct" in model_choice:
         chat_llm = OpenAI(temperature=0.0,  batch_size=20)
     else:
@@ -67,9 +67,9 @@ def run_summary(docs: List[Document], handler, model_choice, summary_method) -> 
     # collects usage and billing info
     openai_cb = OpenAICallbackHandler()
 
-    output_summary = chain.run(split_docs, callbacks=[handler, openai_cb])
+    output_summary = chain.run(split_docs, callbacks=[log_tab_writer, openai_cb])
     wrapped_text = textwrap.fill(output_summary, width=60)
-    handler.container.write(openai_cb)
+    log_tab_writer.container.write(openai_cb)
     return wrapped_text
 
 
@@ -130,8 +130,7 @@ def main():
         if len(st.session_state.loaded_docs) > 0:
             if st.button("Clear existing data"):
                 st.session_state.loaded_docs = []
-            model_choice = st.radio(label="Choose a language model", options=["gpt-3.5-turbo",
-                                                                              "gpt-3.5-turbo-instruct"],
+            model_choice = st.radio(label="Choose a  model", options=["gpt-3.5-turbo-instruct", "gpt-3.5-turbo"],
                                     help="'gpt-3.5-turbo-instruct' variant is faster, but tends to produce text that "
                                          "is more "
                                          "unstructured. 'gpt-3.5-turbo' is slower but produces better quality, "
@@ -150,7 +149,6 @@ def main():
                     writer = MyStreamLitHandler(log_ct)
                     result = run_summary(st.session_state.loaded_docs, writer, model_choice, summary_method)
                     st.code(result, language=None, line_numbers=False)
-
 
 
 if __name__ == "__main__":

@@ -7,6 +7,9 @@ from langchain.schema import BaseMessage, AgentFinish, AgentAction, LLMResult
 
 
 class MyStreamLitHandler(BaseCallbackHandler):
+    """
+        A callback handler that logs Langchain events to a Streamlit container.
+    """
 
     def __init__(self, container):
         self.container = container
@@ -36,7 +39,10 @@ class MyStreamLitHandler(BaseCallbackHandler):
         """Print out the prompts."""
         self.container.write(f"LLM  starting..")
         for p in prompts:
-            self.container.write(p)
+            abbrev = p
+            if len(abbrev > 500):
+                abbrev = f"{p[:500]}..."
+            self.container.write(abbrev)
 
     def on_llm_end(self, response: LLMResult, **kwargs: Any) -> None:
         self.container.write(f"LLM  ending..")
