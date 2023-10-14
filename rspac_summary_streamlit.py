@@ -15,6 +15,12 @@ from typing import List
 from callback_handlers import MyStreamLitHandler
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.callbacks import OpenAICallbackHandler
+from langchain.vectorstores import Chroma
+from langchain.embeddings import OpenAIEmbeddings
+from langchain.chains import RetrievalQA
+
+
+## rob_nb=SD1932261
 
 
 def show_help():
@@ -33,9 +39,10 @@ def show_help():
     st.write("No content is created or altered  in your RSpace account - data is only read.")
 
 
-def run_summary(docs: List[Document], log_tab_writer: MyStreamLitHandler, model_choice: str, summary_method: str) -> str:
+def run_summary(docs: List[Document], log_tab_writer: MyStreamLitHandler, model_choice: str,
+                summary_method: str) -> str:
     if "instruct" in model_choice:
-        chat_llm = OpenAI(temperature=0.0,  batch_size=20)
+        chat_llm = OpenAI(temperature=0.0, batch_size=20)
     else:
         chat_llm = ChatOpenAI(temperature=0.0, model_name=model_choice)
 
@@ -84,6 +91,20 @@ def form_callback():
     st.sidebar.write(st.session_state.eln_cli.get_status())
 
 
+def import_content_into_session(global_id: str):
+    loader = RSpaceLoader(api_key=st.session_state.rspace_apikey, url=st.session_state.rspace_url,
+                          global_id=global_id.strip())
+    imported_rspace_docs = []
+    for d in loader.lazy_load():
+        st.write(f"read doc {d.metadata['source']}")
+        imported_rspace_docs.append(d)
+    st.write(f"Finished importing {len(imported_rspace_docs)} docs")
+    st.session_state.loaded_docs = imported_rspace_docs
+    if len(imported_rspace_docs) == 0:
+        st.write("No documents were retrieved. If you were importing a folder, maybe it's empty. If you "
+                 "were importing a Gallery file, it has to be a PDF file with a '.pdf' file extension.")
+
+
 # Main function for Streamlit app
 def main():
     st.set_page_config(page_title="RSpace summarise content")
@@ -107,16 +128,62 @@ def main():
     imported_rspace_docs = []
     if 'loaded_docs' not in st.session_state:
         st.session_state.loaded_docs = []
+    if 'vstores' not in st.session_state:
+        st.session_state.vstores = {}
     with logger_tab:
         log_ct = st.container()
     with help_tab:
         show_help()
 
     with qandatab:
+        chat_llm = OpenAI(temperature=0.0, batch_size=20)
+        current_state = st.container()
+        with current_state:
+            for k in st.session_state.vstores.keys():
+                current_state.write(f"Store exists for {k}")
+
         item_to_import = st.text_input(
             "First, enter your RSpace URL and key in the sidebar. Then enter a folder, document or  notebook "
-            "globalID. A search index will be created from the imported data",
+            "globalID. A search index will be created from the imported data, and you can question it",
         )
+        st.write("First of all import your RSpace documents")
+        if st.button("Create vector DB"):
+            global_id = item_to_import.strip()
+            st.session_state.global_id = global_id
+            with st.spinner(f"importing documents from  {global_id}"):
+                import_content_into_session(global_id)
+            with st.spinner("Creating vector DB"):
+                docs: List[Document] = st.session_state.loaded_docs
+                splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
+                split_docs = splitter.split_documents(docs)
+                st.write(f"Split into {len(split_docs)} fragments ")
+                v_stores = st.session_state.vstores
+                if v_stores is None:
+                    st.session_state.vstores={}
+                if v_stores is None or global_id not in v_stores.keys():
+                    st.write(f"regenerating vector db for {global_id}")
+                    st.session_state.vstores[global_id] = Chroma.from_documents(documents=split_docs,
+                                                                               embedding=OpenAIEmbeddings())
+
+        if st.button("Clear All", help="Removes all database created from your imported documents"):
+            st.session_state.vstores = {}
+        with st.form("query the docs"):
+            st.write("Enter a question in plain text about the content of the data")
+            query = st.text_input("Query")
+            bt = st.form_submit_button("Go")
+
+            if bt:
+                global_id = st.session_state.global_id
+                v_stores = st.session_state.vstores
+                if v_stores is None or global_id not in v_stores.keys():
+                    st.write(f"no data in vector store for global_id {global_id}")
+                else:
+                    st.write (f"Querying db from {global_id} ")
+                    v_store = v_stores[global_id]
+                    retriever = v_store.as_retriever(search_kwargs={'k': 4, 'score_threshold': 0.8})
+                    qa_chain = RetrievalQA.from_chain_type(chat_llm, chain_type='stuff', retriever=retriever, verbose=True)
+                    result = qa_chain({"query": query})
+                    st.write(result)
 
     with importer_tab:
         item_to_import = st.text_input(
@@ -126,16 +193,7 @@ def main():
 
         if st.button("Import"):
             with st.spinner(f"importing documents from  {item_to_import.strip()}"):
-                loader = RSpaceLoader(api_key=st.session_state.rspace_apikey, url=st.session_state.rspace_url,
-                                      global_id=item_to_import.strip())
-                for d in loader.lazy_load():
-                    st.write(f"read doc {d.metadata['source']}")
-                    imported_rspace_docs.append(d)
-                st.write(f"Finished importing {len(imported_rspace_docs)} docs")
-                st.session_state.loaded_docs = imported_rspace_docs
-                if len(imported_rspace_docs) == 0:
-                    st.write("No documents were retrieved. If you were importing a folder, maybe it's empty. If you "
-                             "were importing a Gallery file, it has to be a PDF file with a '.pdf' file extension.")
+                import_content_into_session((item_to_import.strip()))
 
         if len(st.session_state.loaded_docs) > 0:
             if st.button("Clear existing data"):
