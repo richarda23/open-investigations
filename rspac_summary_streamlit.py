@@ -5,7 +5,7 @@ import re
 import streamlit as st
 from langchain.schema import Document
 from rspace_client.eln import eln
-from jupyter_notebooks.rspace_loader import RSpaceLoader;
+from langchain.document_loaders.rspace import RSpaceLoader
 from langchain.llms import OpenAI
 from langchain.chat_models.openai import ChatOpenAI
 from langchain.prompts import PromptTemplate
@@ -103,7 +103,7 @@ def main():
                 label="Submit", on_click=form_callback
             )
 
-    importer_tab, logger_tab, help_tab = st.tabs(["Import Docs & summarise", "Logs", "Instructions"])
+    importer_tab, qandatab, logger_tab, help_tab = st.tabs(["Import Docs & summarise", "QandA", "Logs", "Instructions"])
     imported_rspace_docs = []
     if 'loaded_docs' not in st.session_state:
         st.session_state.loaded_docs = []
@@ -111,6 +111,12 @@ def main():
         log_ct = st.container()
     with help_tab:
         show_help()
+
+    with qandatab:
+        item_to_import = st.text_input(
+            "First, enter your RSpace URL and key in the sidebar. Then enter a folder, document or  notebook "
+            "globalID. A search index will be created from the imported data",
+        )
 
     with importer_tab:
         item_to_import = st.text_input(
