@@ -15,13 +15,13 @@ rspace-client = "*"
 streamlit = "*"
 python-dotenv = "*"
 chroma = "*"
-chromadb = "*"
 lark = "*"
 langchain = {extras = ["docarray"], version = "*"}
 docarray = "*"
 pydantic = "==1.10.9"
 pypdf = "*"
 icecream = "*"
+chromadb = "==0.4.3"
 
 [dev-packages]
 
