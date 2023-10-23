@@ -5,16 +5,24 @@ import re
 
 import boto3
 from dotenv import load_dotenv
+from langchain.chains import QAWithSourcesChain, RetrievalQAWithSourcesChain
+from langchain.chains.retrieval_qa.base import BaseRetrievalQA
 
 from langchain.vectorstores.chroma import Chroma
 from langchain.embeddings import OpenAIEmbeddings
+from langchain.chat_models import ChatOpenAI
+from langchain.retrievers import ParentDocumentRetriever
 import streamlit as st
 
 download_dir = "rspac-helpdocs"
 
 
 def set_vector_store_in_session(vs):
-    st.session_state.vs=vs
+    st.session_state.vs = vs
+
+
+def get_vector_store_from_session():
+    return st.session_state.vs
 
 
 def list_s3():
@@ -33,21 +41,40 @@ def list_s3():
         bucket.download_file(obj.key, f"{download_dir}/{f_name}")
 
 
+def load_db_into_session():
+    vs = Chroma(embedding_function=OpenAIEmbeddings(), persist_directory=download_dir)
+    set_vector_store_in_session(vs)
+    st.write("helpdocs db stored in session")
+
+
 if st.button("Import ChromaDB from S3"):
     list_s3()
-    vs = Chroma(embedding_function=OpenAIEmbeddings(), persist_directory=download_dir)
+    load_db_into_session()
+
+if st.button("Load vector DB"):
+    load_db_into_session()
 
 
-form = st.form("Search RSpace Helpocs")
-search_term =form.text("Enter a search term")
+with st.form("Search RSpace Helpdocs"):
+    search_term = st.text_input("Enter a search term")
 
-if st.form_submit_button:
-    resp = st.session_state.vs.similarity_search(search_term)
-    st.write(resp)
-
+    if st.form_submit_button("Submit query"):
+        resp = st.session_state.vs.similarity_search(search_term)
+        chat_llm = ChatOpenAI(temperature=0.0)
+        vs = get_vector_store_from_session()
+        chain = RetrievalQAWithSourcesChain.from_chain_type(chain_type="stuff",
+                                                            retriever=vs.as_retriever(),
+                                                            return_source_documents=True,
+                                                            llm=chat_llm, verbose=True)
+        output = chain({"question": search_term})
+        srcs = [o.metadata['source'] for o in output['source_documents']]
+        st.write(output['answer'])
+        st.header("Sources")
+        for s in srcs:
+            st.markdown(f"[{s}]({s})")
 
 if __name__ == '__main__':
     # list_s3()
-    vs = Chroma(embedding_function=OpenAIEmbeddings(), persist_directory=download_dir)
-    resp = vs.similarity_search("how do I create a notebook")
-    print(resp[0])
+
+
+    st.write(output)
