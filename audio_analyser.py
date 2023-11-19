@@ -9,7 +9,6 @@ client = OpenAI()
 
 
 def transcribe(audio_file):
-
     transcript = client.audio.transcriptions.create(
         model="whisper-1",
         file=audio_file,
@@ -37,6 +36,24 @@ def complexity(transcription):
     return response.choices[0].message.content
 
 
+def goodexpl(subject, input2):
+    response = client.chat.completions.create(
+        model="gpt-4",
+        temperature=0,
+        messages=[
+            {
+                "role": "system",
+                "content": f"Please explain if this is a good explanation for {subject}"
+            },
+            {
+                "role": "user",
+                "content": input2
+            }
+        ]
+    )
+    return response.choices[0].message.content
+
+
 # Main function for Streamlit app
 def main():
     st.set_page_config(page_title="Am I  understandable?")
@@ -50,10 +67,12 @@ def main():
             - Powered by OpenAI's Whisper
         """
         )
-    uploaded_file = st.file_uploader("Please upload an audio file of your speech", type=['flac', 'm4a', 'mp3', 'mp4', 'mpeg', 'mpga', 'oga', 'ogg', 'wav', 'webm'])
+    uploaded_file = st.file_uploader("Please upload an audio file of your speech",
+                                     type=['flac', 'm4a', 'mp3', 'mp4', 'mpeg', 'mpga', 'oga', 'ogg', 'wav', 'webm'])
     if uploaded_file is not None:
         st.session_state.file_bytes = uploaded_file
 
+    title = st.text_input('What are you trying to talk about?')
     if st.button("Analyse"):
         with st.spinner("Analysing..."):
             text = transcribe(st.session_state.file_bytes)
@@ -62,6 +81,9 @@ def main():
             st.header("Complexity analysis")
             analysis = complexity(text)
             st.write(analysis)
+            st.header("Relevance")
+            rel = goodexpl(title, text)
+            st.write(rel)
 
     # Create a button with label 'Clear Input'
     if st.button("Clear Input"):
