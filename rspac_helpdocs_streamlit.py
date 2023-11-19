@@ -47,7 +47,7 @@ def load_db_into_session():
     st.write("helpdocs db stored in session")
 
 
-if st.button("Import ChromaDB from S3"):
+if st.button("Import HelpDocs vector DB from S3"):
     list_s3()
     load_db_into_session()
 
@@ -56,25 +56,25 @@ if st.button("Load vector DB"):
 
 
 with st.form("Search RSpace Helpdocs"):
-    search_term = st.text_input("Enter a search term")
+    search_term = st.text_input("Query RSpace HelpDocs in natural language")
 
     if st.form_submit_button("Submit query"):
         resp = st.session_state.vs.similarity_search(search_term)
-        chat_llm = ChatOpenAI(temperature=0.0)
+        chat_llm = ChatOpenAI(temperature=0.0, model="gpt-4")
         vs = get_vector_store_from_session()
         chain = RetrievalQAWithSourcesChain.from_chain_type(chain_type="stuff",
                                                             retriever=vs.as_retriever(),
                                                             return_source_documents=True,
                                                             llm=chat_llm, verbose=True)
         output = chain({"question": search_term})
-        srcs = [o.metadata['source'] for o in output['source_documents']]
+        srcs = {o.metadata['source'] : 1 for o in output['source_documents']}
         st.write(output['answer'])
         st.header("Sources")
-        for s in srcs:
+        for s in srcs.keys():
             st.markdown(f"[{s}]({s})")
 
 if __name__ == '__main__':
-    # list_s3()
+ print("hello")
 
 
-    st.write(output)
+  #st.write(output)

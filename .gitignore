@@ -10,3 +10,5 @@ jupyter_notebooks/__pycache__/
 rob_data/
 scratch.html
 rspac-helpdocs
+machine-learning/venv
+.DS_Store
